@@ -83,7 +83,7 @@ def mark_as_unknown():
     pick_new_card()
 
 # Main interface
-st.markdown("<h4>Onregelmatige werkwoorden (Niveau 3) Flashcards</h4>", unsafe_allow_html=True)
+# st.markdown("<h4>Onregelmatige werkwoorden (Niveau 3) Flashcards</h4>", unsafe_allow_html=True)
 
 # Display progress bars
 if st.session_state['original_count'] > 0:
