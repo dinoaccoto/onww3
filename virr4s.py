@@ -107,9 +107,9 @@ if st.session_state['current_verb']:
         st.write(f"({st.session_state['current_verb']['Translation']})")
     
     if st.session_state['show_answer']:
-        # Display bold for Imperfectum and Participium details
-        st.markdown(f"**Imperfectum**: {st.session_state['current_verb']['Imperfectum sing']}, {st.session_state['current_verb']['Imperfectum plur']}")
-        st.markdown(f"**Participium**: {st.session_state['current_verb']['Participium']} ({st.session_state['current_verb']['h/z']})")
+        # Display normal face for Imperfectum and Participium labels and bold for details
+        st.markdown(f"Imperfectum: **{st.session_state['current_verb']['Imperfectum sing']}**, **{st.session_state['current_verb']['Imperfectum plur']}**")
+        st.markdown(f"Participium: **{st.session_state['current_verb']['Participium']}** ({st.session_state['current_verb']['h/z']})")
         
         # Display buttons with equal width in two columns with minimal spacing
         col1, col2 = st.columns([1, 1])
