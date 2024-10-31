@@ -2,7 +2,7 @@ import streamlit as st
 import random
 import re
 
-# Load the verb data from the file
+# Load verbs from file
 verbs = []
 with open("verba.txt", "r", encoding="utf-8") as file:
     next(file)  # Skip header
@@ -15,22 +15,34 @@ with open("verba.txt", "r", encoding="utf-8") as file:
             "Imperfectum plur": columns[2],
             "Participium": columns[3],
             "h/z": columns[4],
-            "Translation": columns[5]  # New column for translation
+            "Translation": columns[5]
         })
 
-# Initialize session state
-if 'show_answer' not in st.session_state:
-    st.session_state['show_answer'] = False
+# Shuffle verbs before splitting into batches
+random.shuffle(verbs)
+
+# Set batch size
+batch_size = 20  # or set this to any other value, e.g., 20
+
+# Split shuffled verbs into batches using batch_size
+batches = [verbs[i:i + batch_size] for i in range(0, len(verbs), batch_size)]
+batch_count = len(batches)
+
+# Initialize session state for batch management
+if 'current_batch_index' not in st.session_state:
+    st.session_state['current_batch_index'] = 0
 if 'mistaken_cards' not in st.session_state:
     st.session_state['mistaken_cards'] = []
 if 'incorrect_count' not in st.session_state:
     st.session_state['incorrect_count'] = 0
 if 'cards_to_review' not in st.session_state:
-    st.session_state['cards_to_review'] = list(verbs)
+    st.session_state['cards_to_review'] = list(batches[st.session_state['current_batch_index']])
 if 'original_count' not in st.session_state:
     st.session_state['original_count'] = len(st.session_state['cards_to_review'])
 if 'current_verb' not in st.session_state:
     st.session_state['current_verb'] = random.choice(st.session_state['cards_to_review']) if st.session_state['cards_to_review'] else None
+if 'show_answer' not in st.session_state:
+    st.session_state['show_answer'] = False
 
 # Helper function to pick a new card only when needed
 def pick_new_card():
@@ -38,8 +50,15 @@ def pick_new_card():
         st.session_state['current_verb'] = random.choice(st.session_state['cards_to_review'])
         st.session_state['cards_to_review'].remove(st.session_state['current_verb'])
     else:
-        # Reset for mistaken cards review if available
-        if st.session_state['mistaken_cards']:
+        if not st.session_state['mistaken_cards'] and st.session_state['current_batch_index'] < batch_count - 1:
+            st.session_state['current_batch_index'] += 1
+            st.session_state['cards_to_review'] = list(batches[st.session_state['current_batch_index']])
+            st.session_state['original_count'] = len(st.session_state['cards_to_review'])
+            st.session_state['incorrect_count'] = 0
+            st.session_state['mistaken_cards'] = []
+            st.session_state['current_verb'] = random.choice(st.session_state['cards_to_review'])
+            st.session_state['cards_to_review'].remove(st.session_state['current_verb'])
+        elif st.session_state['mistaken_cards']:
             st.session_state['cards_to_review'] = st.session_state['mistaken_cards'][:]
             st.session_state['mistaken_cards'] = []
             st.session_state['incorrect_count'] = 0
@@ -47,7 +66,7 @@ def pick_new_card():
             st.session_state['current_verb'] = random.choice(st.session_state['cards_to_review'])
             st.session_state['cards_to_review'].remove(st.session_state['current_verb'])
         else:
-            st.session_state['current_verb'] = None  # No more cards to review
+            st.session_state['current_verb'] = None
 
 # Define functions for button actions
 def show_answer():
@@ -63,25 +82,15 @@ def mark_as_unknown():
     st.session_state['show_answer'] = False
     pick_new_card()
 
-def go_back():
-    if st.session_state['mistaken_cards']:
-        st.session_state['cards_to_review'] = [st.session_state['mistaken_cards'].pop()] + st.session_state['cards_to_review']
-        pick_new_card()
-
-def go_forward():
-    pick_new_card()
-
 # Main interface
-st.markdown("<h3>Onregelmatige werkwoorden (Niveau 3) Flashcards</h3>", unsafe_allow_html=True)
+st.markdown("<h4>Onregelmatige werkwoorden (Niveau 3) Flashcards</h4>", unsafe_allow_html=True)
 
 # Display progress bars
 if st.session_state['original_count'] > 0:
     correct_progress = (st.session_state['original_count'] - len(st.session_state['cards_to_review']) - st.session_state['incorrect_count']) / st.session_state['original_count']
     incorrect_progress = st.session_state['incorrect_count'] / st.session_state['original_count']
     
-    # Standard green progress bar for correct answers
     st.progress(correct_progress)
-    # Red progress bar for mistakes, filling from right to left
     st.markdown(
         f"""
         <div style="position: relative; background-color: #e0e0e0; border-radius: 4px; height: 8px; margin-top: 10px; overflow: hidden;">
@@ -93,63 +102,30 @@ if st.session_state['original_count'] > 0:
 
 # Display current verb and translation
 if st.session_state['current_verb']:
-    st.markdown(f"**<span style='font-size:1.2em;'>{st.session_state['current_verb']['Infinitief']}</span>**", unsafe_allow_html=True)  # Bold and slightly larger infinitive
+    st.markdown(f"**<span style='font-size:1.5em;'>{st.session_state['current_verb']['Infinitief']}</span>**", unsafe_allow_html=True)
     if st.session_state['current_verb']["Translation"]:
         st.write(f"({st.session_state['current_verb']['Translation']})")
     
-    # Show answer if requested
     if st.session_state['show_answer']:
-        st.write(f"Imperfectum: {st.session_state['current_verb']['Imperfectum sing']}, {st.session_state['current_verb']['Imperfectum plur']}")
-        st.write(f"Participium: {st.session_state['current_verb']['Participium']} ({st.session_state['current_verb']['h/z']})")
+        # Display bold for Imperfectum and Participium details
+        st.markdown(f"**Imperfectum**: {st.session_state['current_verb']['Imperfectum sing']}, {st.session_state['current_verb']['Imperfectum plur']}")
+        st.markdown(f"**Participium**: {st.session_state['current_verb']['Participium']} ({st.session_state['current_verb']['h/z']})")
+        
+        # Display buttons with equal width in two columns with minimal spacing
+        col1, col2 = st.columns([1, 1])
 
-        # Group "Ja" and "Neen" buttons closely within the same container
-        with st.container():
-            col1, col2 = st.columns([0.5, 0.5])
-            with col1:
-                st.button("Ja", on_click=mark_as_known)
-            with col2:
-                st.button("Neen", on_click=mark_as_unknown)
+        with col1:
+            st.button("Ja", on_click=mark_as_known)
+        
+        with col2:
+            st.button("Neen", on_click=mark_as_unknown)
     else:
-        # Show answer button
         st.button("Toon", on_click=show_answer)
 
-# Display remaining count
+# Display remaining count and batch
 remaining = st.session_state['original_count'] - len(st.session_state['cards_to_review'])
-st.write(f"Progress: {remaining}/{st.session_state['original_count']}")
+st.write(f"Progress: {remaining}/{st.session_state['original_count']} in Batch {st.session_state['current_batch_index'] + 1}/{batch_count}")
 
 # Display message if no more verbs are left to review
 if not st.session_state['current_verb']:
-    st.write("No more verbs to review!")
-
-# CSS to position the scrolling buttons on the right side of the screen
-st.markdown(
-    """
-    <style>
-    .scroll-buttons {
-        position: fixed;
-        top: 50%;
-        right: 20px;
-        transform: translateY(-50%);
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# Buttons for scrolling, positioned on the right side
-st.markdown(
-    """
-    <div class="scroll-buttons">
-        <button onclick="document.querySelector('[aria-label=Indietro]').click()">Indietro</button>
-        <button onclick="document.querySelector('[aria-label=Avanti]').click()">Avanti</button>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-# Hidden Streamlit buttons to trigger the callbacks
-st.button("Indietro", on_click=go_back, key="Indietro", label_visibility="collapsed")
-st.button("Avanti", on_click=go_forward, key="Avanti", label_visibility="collapsed")
+    st.write("No more verbs to review")
