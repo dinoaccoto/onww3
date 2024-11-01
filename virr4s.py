@@ -22,13 +22,13 @@ with open("verba.txt", "r", encoding="utf-8") as file:
 random.shuffle(verbs)
 
 # Set batch size
-batch_size = 20  # or set this to any other value, e.g., 20
+batch_size = 20  # or set this to any other value
 
 # Split shuffled verbs into batches using batch_size
 batches = [verbs[i:i + batch_size] for i in range(0, len(verbs), batch_size)]
 batch_count = len(batches)
 
-# Initialize session state for batch management
+# Initialize session state for batch and card management
 if 'current_batch_index' not in st.session_state:
     st.session_state['current_batch_index'] = 0
 if 'mistaken_cards' not in st.session_state:
@@ -43,6 +43,14 @@ if 'current_verb' not in st.session_state:
     st.session_state['current_verb'] = random.choice(st.session_state['cards_to_review']) if st.session_state['cards_to_review'] else None
 if 'show_answer' not in st.session_state:
     st.session_state['show_answer'] = False
+
+# Initialize counters for total cards shown (n1), total "Neen" presses (n3), and total "Ja" presses (n5)
+if 'total_shown_count' not in st.session_state:
+    st.session_state['total_shown_count'] = 0  # n1
+if 'total_neen_count' not in st.session_state:
+    st.session_state['total_neen_count'] = 0  # n3
+if 'total_ja_count' not in st.session_state:
+    st.session_state['total_ja_count'] = 0  # n5
 
 # Helper function to pick a new card only when needed
 def pick_new_card():
@@ -71,19 +79,39 @@ def pick_new_card():
 # Define functions for button actions
 def show_answer():
     st.session_state['show_answer'] = True
+    # Increase total shown count (n1) whenever "Toon" is pressed
+    st.session_state['total_shown_count'] += 1
 
 def mark_as_known():
     st.session_state['show_answer'] = False
+    st.session_state['total_ja_count'] += 1  # Increase total "Ja" count (n5)
     pick_new_card()
 
 def mark_as_unknown():
     st.session_state['mistaken_cards'].append(st.session_state['current_verb'])
     st.session_state['incorrect_count'] += 1
+    st.session_state['total_neen_count'] += 1  # Increase total "Neen" count (n3)
     st.session_state['show_answer'] = False
     pick_new_card()
 
 # Main interface
-# st.markdown("<h4>Onregelmatige werkwoorden (Niveau 3) Flashcards</h4>", unsafe_allow_html=True)
+st.markdown("Onregelmatige werkwoorden (Niveau 3) Flashcards", unsafe_allow_html=True)
+
+# Calculate percentages n2, n4, and n6
+n1 = st.session_state['total_shown_count']
+n3 = st.session_state['total_neen_count']
+n5 = st.session_state['total_ja_count']
+total_verbs = len(verbs)
+n2 = (n1 / total_verbs * 100) if total_verbs > 0 else 0
+n4 = (n3 / n1 * 100) if n1 > 0 else 0
+n6 = (n5 / n1 * 100) if n1 > 0 else 0
+
+# Display counts and percentages with colored text
+st.markdown(
+    f"**{n1} ({n2:.1f}%) - <span style='color:green;'>{n5} ({n6:.1f}%)</span> - <span style='color:red;'>{n3} ({n4:.1f}%)</span>**",
+    unsafe_allow_html=True
+)
+
 
 # Display progress bars
 if st.session_state['original_count'] > 0:
@@ -107,11 +135,9 @@ if st.session_state['current_verb']:
         st.write(f"({st.session_state['current_verb']['Translation']})")
     
     if st.session_state['show_answer']:
-        # Display normal face for Imperfectum and Participium labels and bold for details
         st.markdown(f"Imperfectum: **{st.session_state['current_verb']['Imperfectum sing']}**, **{st.session_state['current_verb']['Imperfectum plur']}**")
         st.markdown(f"Participium: **{st.session_state['current_verb']['Participium']}** (**{st.session_state['current_verb']['h/z']}**)")
-        
-        # Display buttons with equal width in two columns with minimal spacing
+
         col1, col2 = st.columns([1, 1])
 
         with col1:
