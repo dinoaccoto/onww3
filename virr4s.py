@@ -97,21 +97,22 @@ def mark_as_unknown():
 # Main interface
 st.markdown("Onregelmatige werkwoorden (Niveau 3) Flashcards", unsafe_allow_html=True)
 
-# Calculate percentages n2, n4, and n6
+# Calculate percentages n4 and n6
 n1 = st.session_state['total_shown_count']
 n3 = st.session_state['total_neen_count']
 n5 = st.session_state['total_ja_count']
-total_verbs = len(verbs)
-n2 = (n1 / total_verbs * 100) if total_verbs > 0 else 0
 n4 = (n3 / n1 * 100) if n1 > 0 else 0
 n6 = (n5 / n1 * 100) if n1 > 0 else 0
 
+# Display progress
+remaining = st.session_state['original_count'] - len(st.session_state['cards_to_review'])
+st.write(f"Progress: {remaining}/{st.session_state['original_count']} in Batch {st.session_state['current_batch_index'] + 1}/{batch_count}")
+
 # Display counts and percentages with colored text
 st.markdown(
-    f"**{n1} ({n2:.1f}%) - <span style='color:green;'>{n5} ({n6:.1f}%)</span> - <span style='color:red;'>{n3} ({n4:.1f}%)</span>**",
+    f"**{n1} - <span style='color:red;'>{n3} ({n4:.1f}%)</span> - <span style='color:green;'>{n5} ({n6:.1f}%)</span>**",
     unsafe_allow_html=True
 )
-
 
 # Display progress bars
 if st.session_state['original_count'] > 0:
@@ -147,10 +148,6 @@ if st.session_state['current_verb']:
             st.button("Neen", on_click=mark_as_unknown)
     else:
         st.button("Toon", on_click=show_answer)
-
-# Display remaining count and batch
-remaining = st.session_state['original_count'] - len(st.session_state['cards_to_review'])
-st.write(f"Progress: {remaining}/{st.session_state['original_count']} in Batch {st.session_state['current_batch_index'] + 1}/{batch_count}")
 
 # Display message if no more verbs are left to review
 if not st.session_state['current_verb']:
