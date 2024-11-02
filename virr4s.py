@@ -95,7 +95,7 @@ def mark_as_unknown():
     pick_new_card()
 
 # Main interface
-st.markdown("Onregelmatige werkwoorden (Niveau 3) Flashcards", unsafe_allow_html=True)
+st.markdown("Onregelmatige werkwoorden - Niveau 3", unsafe_allow_html=True)
 
 # Calculate percentages n4 and n6
 n1 = st.session_state['total_shown_count']
@@ -106,7 +106,7 @@ n6 = (n5 / n1 * 100) if n1 > 0 else 0
 
 # Display progress
 remaining = st.session_state['original_count'] - len(st.session_state['cards_to_review'])
-st.write(f"Progress: {remaining}/{st.session_state['original_count']} in Batch {st.session_state['current_batch_index'] + 1}/{batch_count}")
+st.markdown(f"**Progress: {remaining}/{st.session_state['original_count']} in Batch {st.session_state['current_batch_index'] + 1}/{batch_count}**")
 
 # Display counts and percentages with colored text
 st.markdown(
